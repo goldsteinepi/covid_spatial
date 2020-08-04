@@ -346,6 +346,8 @@ rm(i)
 summary(zcta_test)
 summary(zcta_prev)
 
+zcta_prev[which(zcta==19120)]
+
 par(mar=c(4, 4, 4, 5) + 0.1)
 plot(x=1:47, y=zcta_prev, pch=1, xaxt="n", yaxt="n", ylab="Prevalence (%)", xlab="", ylim=c(0,20))
 points(x=1:47, y=zcta_test/10, pch=8)

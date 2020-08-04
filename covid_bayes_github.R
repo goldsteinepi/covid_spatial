@@ -12,6 +12,8 @@ library("MCMCvis") #visualizations
 library("spdep") #spatial modeling
 library("RColorBrewer") #color palette
 library("cartogram") #mapping cartograms 
+library("Rfast") #colMedians
+library("MASS") #mvrnodm
 
 
 ### READ DATA ###
@@ -34,25 +36,25 @@ jags_model1 = function()
   
   ##priors: these do not vary by ZIP code
   
-  #misclassification
-  #sn ~ dunif(0.1, 0.5)       #sensitivity of surveillance process to identify case
-  sp ~ dbeta(100, 3.02)       #mode 0.98, Quantiles: 5%, 95% (0.939, 0.992)
+  #accuracy of surveillance process to identify case
+  #sn is defined by ZIP code
+  sp ~ dbeta(100, 3.02)                       #specificity of surveillance process to identify case
   
   #spatial effects
   eta0 ~ dnorm(-3.5, 1/(0.5^2))               #average true prevalence (logit scale)
-  eta1 ~ dnorm(0.04, 1/(0.04^2))            #effect of ADI on true prevalence (logit scale)
-  tau ~ dgamma(1, 0.1)                      #precision of random component
-  phi ~ dunif(0, 0.99)                      #spatial correlation
-  v ~ dmnorm(rep(0,zip), tau * (d - phi*w)) #spatial structuted random effect (note: random spatial prior specified outside for loop)
+  eta1 ~ dnorm(0.04, 1/(0.04^2))              #effect of ADI on true prevalence (logit scale)
+  tau_u ~ dgamma(1, 0.1)                      #precision of random component u
+  tau_v ~ dgamma(1, 0.1)                      #precision of random component v
+  phi ~ dunif(0, 1)                           #spatial correlation
+  v ~ dmnorm(rep(0,zip), tau_v * (d - phi*w)) #spatial structuted random effect (note: random spatial prior specified outside for loop)
   
   #construct model for each ZIP code
   for (i in 1:zip) {
     
     ## priors: these vary by ZIP code
     
-    sn[i] ~ dbeta(14.022, 9.681)          #sensitivity of surveillance process to identify case
-    #sp[i] ~ dbeta(100, 3.02)             #specificity of surveillance process to identify case
-    u[i] ~ dnorm(0, tau)                  #unstructured (non-spatial) random effect
+    sn[i] ~ dbeta(14.022, 9.681)              #sensitivity of surveillance process to identify case
+    u[i] ~ dnorm(0, tau_u)                    #unstructured (non-spatial) random effect
     
     ## models
     
@@ -92,25 +94,25 @@ jags_model2 = function()
   
   ##priors: these do not vary by ZIP code
   
-  #misclassification
-  #sn ~ dunif(0.1, 0.5)       #sensitivity of surveillance process to identify case
-  sp ~ dbeta(100, 3.02)       #mode 0.98, Quantiles: 5%, 95% (0.939, 0.992)
+  #accuracy of surveillance process to identify case
+  #sn is defined by ZIP code
+  sp ~ dbeta(100, 3.02)                       #specificity of surveillance process to identify case
   
   #spatial effects
   eta0 ~ dnorm(-3.5, 1/(0.5^2))               #average true prevalence (logit scale)
-  eta1 ~ dnorm(0.04, 1/(0.04^2))            #effect of ADI on true prevalence (logit scale)
-  tau ~ dgamma(1, 0.1)                      #precision of random component
-  phi ~ dunif(0, 0.99)                      #spatial correlation
-  v ~ dmnorm(rep(0,zip), tau * (d - phi*w)) #spatial structuted random effect (note: random spatial prior specified outside for loop)
+  eta1 ~ dnorm(0.04, 1/(0.04^2))              #effect of ADI on true prevalence (logit scale)
+  tau_u ~ dgamma(1, 0.1)                      #precision of random component u
+  tau_v ~ dgamma(1, 0.1)                      #precision of random component v
+  phi ~ dunif(0, 1)                           #spatial correlation
+  v ~ dmnorm(rep(0,zip), tau_v * (d - phi*w)) #spatial structuted random effect (note: random spatial prior specified outside for loop)
   
   #construct model for each ZIP code
   for (i in 1:zip) {
     
     ## priors: these vary by ZIP code
     
-    sn[i] ~ dbeta(14.022, 9.681)          #sensitivity of surveillance process to identify case
-    #sp[i] ~ dbeta(100, 3.02)             #specificity of surveillance process to identify case
-    u[i] ~ dnorm(0, tau)                  #unstructured (non-spatial) random effect
+    sn[i] ~ dbeta(14.022, 9.681)              #sensitivity of surveillance process to identify case
+    u[i] ~ dnorm(0, tau_u)                    #unstructured (non-spatial) random effect
     
     ## models
     
@@ -150,25 +152,25 @@ jags_model3 = function()
   
   ##priors: these do not vary by ZIP code
   
-  #misclassification
-  #sn ~ dunif(0.1, 0.5)       #sensitivity of surveillance process to identify case
-  sp ~ dbeta(100, 3.02)       #mode 0.98, Quantiles: 5%, 95% (0.939, 0.992)
+  #accuracy of surveillance process to identify case
+  #sn is defined by ZIP code
+  sp ~ dbeta(100, 3.02)       #specificity of surveillance process to identify case
   
   #spatial effects
   eta0 ~ dnorm(-3.5, 1/(0.5^2))               #average true prevalence (logit scale)
-  eta1 ~ dnorm(0.04, 1/(0.04^2))            #effect of ADI on true prevalence (logit scale)
-  tau ~ dgamma(1, 0.1)                      #precision of random component
-  phi ~ dunif(0, 0.99)                      #spatial correlation
-  v ~ dmnorm(rep(0,zip), tau * (d - phi*w)) #spatial structuted random effect (note: random spatial prior specified outside for loop)
+  eta1 ~ dnorm(0.04, 1/(0.04^2))              #effect of ADI on true prevalence (logit scale)
+  tau_u ~ dgamma(1, 0.1)                      #precision of random component u
+  tau_v ~ dgamma(1, 0.1)                      #precision of random component v
+  phi ~ dunif(0, 1)                           #spatial correlation
+  v ~ dmnorm(rep(0,zip), tau_v * (d - phi*w)) #spatial structuted random effect (note: random spatial prior specified outside for loop)
   
   #construct model for each ZIP code
   for (i in 1:zip) {
     
     ## priors: these vary by ZIP code
     
-    sn[i] ~ dbeta(14.022, 9.681)          #sensitivity of surveillance process to identify case
-    #sp[i] ~ dbeta(100, 3.02)             #specificity of surveillance process to identify case
-    u[i] ~ dnorm(0, tau)                  #unstructured (non-spatial) random effect
+    sn[i] ~ dbeta(14.022, 9.681)              #sensitivity of surveillance process to identify case
+    u[i] ~ dnorm(0, tau_u)                    #unstructured (non-spatial) random effect
     
     ## models
     
@@ -208,25 +210,262 @@ jags_model4 = function()
   
   ##priors: these do not vary by ZIP code
   
-  #misclassification
-  #sn ~ dunif(0.1, 0.5)       #sensitivity of surveillance process to identify case
-  sp ~ dbeta(100, 3.02)       #mode 0.98, Quantiles: 5%, 95% (0.939, 0.992)
+  #accuracy of surveillance process to identify case
+  #sn is defined by ZIP code
+  sp ~ dbeta(100, 3.02)       #specificity of surveillance process to identify case
   
   #spatial effects
   eta0 ~ dnorm(-3.5, 1/(0.5^2))               #average true prevalence (logit scale)
-  eta1 ~ dnorm(0.04, 1/(0.04^2))            #effect of ADI on true prevalence (logit scale)
-  tau ~ dgamma(1, 0.1)                      #precision of random component
-  phi ~ dunif(0, 0.99)                      #spatial correlation
-  v ~ dmnorm(rep(0,zip), tau * (d - phi*w)) #spatial structuted random effect (note: random spatial prior specified outside for loop)
+  eta1 ~ dnorm(0.04, 1/(0.04^2))              #effect of ADI on true prevalence (logit scale)
+  tau_u ~ dgamma(1, 0.1)                      #precision of random component u
+  tau_v ~ dgamma(1, 0.1)                      #precision of random component v
+  phi ~ dunif(0, 1)                           #spatial correlation
+  v ~ dmnorm(rep(0,zip), tau_v * (d - phi*w)) #spatial structuted random effect (note: random spatial prior specified outside for loop)
   
   #construct model for each ZIP code
   for (i in 1:zip) {
     
     ## priors: these vary by ZIP code
     
-    sn[i] ~ dbeta(14.022, 9.681)          #sensitivity of surveillance process to identify case
-    #sp[i] ~ dbeta(100, 3.02)             #specificity of surveillance process to identify case
-    u[i] ~ dnorm(0, tau)                  #unstructured (non-spatial) random effect
+    sn[i] ~ dbeta(14.022, 9.681)              #sensitivity of surveillance process to identify case
+    u[i] ~ dnorm(0, tau_u)                    #unstructured (non-spatial) random effect
+    
+    ## models
+    
+    # true prevalence as function of ADI and random effect (candidate models)
+    #logit(r[i]) <- eta0 + eta1*adi[i]                #model 1: base model
+    #logit(r[i]) <- eta0 + eta1*adi[i] + u[i]         #model 2: unstructured model
+    #logit(r[i]) <- eta0 + eta1*adi[i] + v[i]         #model 3: spatial structured model
+    logit(r[i]) <- eta0 + eta1*adi[i] + u[i] + v[i]   #model 4: convolution model
+    
+    #true infected in population
+    y.t[i] ~ dbinom(r[i], t[i])
+    
+    #observed infected if infected
+    y.o1[i] ~ dbinom(sn[i], y.t[i])     
+    
+    #observed infected if not infected
+    y.o2[i] ~ dbinom(1-sp, t[i]-y.t[i])   
+    
+    #observed counts
+    y.o[i] ~ sum(y.o1[i],y.o2[i])          
+    
+    #error in count between observed and expected
+    err[i] <- y.t[i] - y.o[i]
+  }
+}
+
+#sensitivity analyses on SN
+jags_model1_sn = function()
+{    
+  ## data
+  
+  #y.o = observed count of COVID-19 cases in each ZIP code
+  #t = population of the ZIP code
+  #adi = area deprivation index of the ZIP code
+  #zip = number of ZIP codes
+  #d = binary spatial weights matrix
+  #w = diagonal matrix of number of neighbors per ZIP Code
+  
+  ##priors: these do not vary by ZIP code
+  
+  #accuracy of surveillance process to identify case
+  #sn is defined by ZIP code
+  sp ~ dbeta(100, 3.02)       #specificity of surveillance process to identify case
+  
+  #spatial effects
+  eta0 ~ dnorm(-3.5, 1/(0.5^2))               #average true prevalence (logit scale)
+  eta1 ~ dnorm(0.04, 1/(0.04^2))              #effect of ADI on true prevalence (logit scale)
+  tau_u ~ dgamma(1, 0.1)                      #precision of random component u
+  tau_v ~ dgamma(1, 0.1)                      #precision of random component v
+  phi ~ dunif(0, 1)                           #spatial correlation
+  v ~ dmnorm(rep(0,zip), tau_v * (d - phi*w)) #spatial structuted random effect (note: random spatial prior specified outside for loop)
+  
+  #construct model for each ZIP code
+  for (i in 1:zip) {
+    
+    ## priors: these vary by ZIP code
+    
+    #sn[i] ~ dbeta(14.022, 9.681)             #sensitivity of surveillance process to identify case
+    sn[i] ~ dunif(0.25, 0.75)                 #sensitivity of surveillance process to identify case
+    u[i] ~ dnorm(0, tau_u)                    #unstructured (non-spatial) random effect
+    
+    ## models
+    
+    # true prevalence as function of ADI and random effect (candidate models)
+    logit(r[i]) <- eta0 + eta1*adi[i]                 #model 1: base model
+    #logit(r[i]) <- eta0 + eta1*adi[i] + u[i]         #model 2: unstructured model
+    #logit(r[i]) <- eta0 + eta1*adi[i] + v[i]         #model 3: spatial structured model
+    #logit(r[i]) <- eta0 + eta1*adi[i] + u[i] + v[i]  #model 4: convolution model
+    
+    #true infected in population
+    y.t[i] ~ dbinom(r[i], t[i])
+    
+    #observed infected if infected
+    y.o1[i] ~ dbinom(sn[i], y.t[i])     
+    
+    #observed infected if not infected
+    y.o2[i] ~ dbinom(1-sp, t[i]-y.t[i])   
+    
+    #observed counts
+    y.o[i] ~ sum(y.o1[i],y.o2[i])          
+    
+    #error in count between observed and expected
+    err[i] <- y.t[i] - y.o[i]
+  }
+}
+
+jags_model2_sn = function()
+{    
+  ## data
+  
+  #y.o = observed count of COVID-19 cases in each ZIP code
+  #t = population of the ZIP code
+  #adi = area deprivation index of the ZIP code
+  #zip = number of ZIP codes
+  #d = binary spatial weights matrix
+  #w = diagonal matrix of number of neighbors per ZIP Code
+  
+  ##priors: these do not vary by ZIP code
+  
+  #accuracy of surveillance process to identify case
+  #sn is defined by ZIP code
+  sp ~ dbeta(100, 3.02)       #specificity of surveillance process to identify case
+  
+  #spatial effects
+  eta0 ~ dnorm(-3.5, 1/(0.5^2))               #average true prevalence (logit scale)
+  eta1 ~ dnorm(0.04, 1/(0.04^2))              #effect of ADI on true prevalence (logit scale)
+  tau_u ~ dgamma(1, 0.1)                      #precision of random component u
+  tau_v ~ dgamma(1, 0.1)                      #precision of random component v
+  phi ~ dunif(0, 1)                           #spatial correlation
+  v ~ dmnorm(rep(0,zip), tau_v * (d - phi*w)) #spatial structuted random effect (note: random spatial prior specified outside for loop)
+  
+  #construct model for each ZIP code
+  for (i in 1:zip) {
+    
+    ## priors: these vary by ZIP code
+    
+    #sn[i] ~ dbeta(14.022, 9.681)             #sensitivity of surveillance process to identify case
+    sn[i] ~ dunif(0.25, 0.75)                 #sensitivity of surveillance process to identify case
+    u[i] ~ dnorm(0, tau_u)                    #unstructured (non-spatial) random effect
+    
+    ## models
+    
+    # true prevalence as function of ADI and random effect (candidate models)
+    #logit(r[i]) <- eta0 + eta1*adi[i]                #model 1: base model
+    logit(r[i]) <- eta0 + eta1*adi[i] + u[i]          #model 2: unstructured model
+    #logit(r[i]) <- eta0 + eta1*adi[i] + v[i]         #model 3: spatial structured model
+    #logit(r[i]) <- eta0 + eta1*adi[i] + u[i] + v[i]  #model 4: convolution model
+    
+    #true infected in population
+    y.t[i] ~ dbinom(r[i], t[i])
+    
+    #observed infected if infected
+    y.o1[i] ~ dbinom(sn[i], y.t[i])     
+    
+    #observed infected if not infected
+    y.o2[i] ~ dbinom(1-sp, t[i]-y.t[i])   
+    
+    #observed counts
+    y.o[i] ~ sum(y.o1[i],y.o2[i])          
+    
+    #error in count between observed and expected
+    err[i] <- y.t[i] - y.o[i]
+  }
+}
+
+jags_model3_sn = function()
+{    
+  ## data
+  
+  #y.o = observed count of COVID-19 cases in each ZIP code
+  #t = population of the ZIP code
+  #adi = area deprivation index of the ZIP code
+  #zip = number of ZIP codes
+  #d = binary spatial weights matrix
+  #w = diagonal matrix of number of neighbors per ZIP Code
+  
+  ##priors: these do not vary by ZIP code
+  
+  #accuracy of surveillance process to identify case
+  #sn is defined by ZIP code
+  sp ~ dbeta(100, 3.02)       #specificity of surveillance process to identify case
+  
+  #spatial effects
+  eta0 ~ dnorm(-3.5, 1/(0.5^2))               #average true prevalence (logit scale)
+  eta1 ~ dnorm(0.04, 1/(0.04^2))              #effect of ADI on true prevalence (logit scale)
+  tau_u ~ dgamma(1, 0.1)                      #precision of random component u
+  tau_v ~ dgamma(1, 0.1)                      #precision of random component v
+  phi ~ dunif(0, 1)                           #spatial correlation
+  v ~ dmnorm(rep(0,zip), tau_v * (d - phi*w)) #spatial structuted random effect (note: random spatial prior specified outside for loop)
+  
+  #construct model for each ZIP code
+  for (i in 1:zip) {
+    
+    ## priors: these vary by ZIP code
+    
+    #sn[i] ~ dbeta(14.022, 9.681)             #sensitivity of surveillance process to identify case
+    sn[i] ~ dunif(0.25, 0.75)                 #sensitivity of surveillance process to identify case
+    u[i] ~ dnorm(0, tau_u)                    #unstructured (non-spatial) random effect
+    
+    ## models
+    
+    # true prevalence as function of ADI and random effect (candidate models)
+    #logit(r[i]) <- eta0 + eta1*adi[i]                #model 1: base model
+    #logit(r[i]) <- eta0 + eta1*adi[i] + u[i]         #model 2: unstructured model
+    logit(r[i]) <- eta0 + eta1*adi[i] + v[i]          #model 3: spatial structured model
+    #logit(r[i]) <- eta0 + eta1*adi[i] + u[i] + v[i]  #model 4: convolution model
+    
+    #true infected in population
+    y.t[i] ~ dbinom(r[i], t[i])
+    
+    #observed infected if infected
+    y.o1[i] ~ dbinom(sn[i], y.t[i])     
+    
+    #observed infected if not infected
+    y.o2[i] ~ dbinom(1-sp, t[i]-y.t[i])   
+    
+    #observed counts
+    y.o[i] ~ sum(y.o1[i],y.o2[i])          
+    
+    #error in count between observed and expected
+    err[i] <- y.t[i] - y.o[i]
+  }
+}
+
+jags_model4_sn = function()
+{    
+  ## data
+  
+  #y.o = observed count of COVID-19 cases in each ZIP code
+  #t = population of the ZIP code
+  #adi = area deprivation index of the ZIP code
+  #zip = number of ZIP codes
+  #d = binary spatial weights matrix
+  #w = diagonal matrix of number of neighbors per ZIP Code
+  
+  ##priors: these do not vary by ZIP code
+  
+  #accuracy of surveillance process to identify case
+  #sn is defined by ZIP code
+  sp ~ dbeta(100, 3.02)       #specificity of surveillance process to identify case
+  
+  #spatial effects
+  eta0 ~ dnorm(-3.5, 1/(0.5^2))               #average true prevalence (logit scale)
+  eta1 ~ dnorm(0.04, 1/(0.04^2))              #effect of ADI on true prevalence (logit scale)
+  tau_u ~ dgamma(1, 0.1)                      #precision of random component u
+  tau_v ~ dgamma(1, 0.1)                      #precision of random component v
+  phi ~ dunif(0, 1)                           #spatial correlation
+  v ~ dmnorm(rep(0,zip), tau_v * (d - phi*w)) #spatial structuted random effect (note: random spatial prior specified outside for loop)
+  
+  #construct model for each ZIP code
+  for (i in 1:zip) {
+    
+    ## priors: these vary by ZIP code
+    
+    #sn[i] ~ dbeta(14.022, 9.681)             #sensitivity of surveillance process to identify case
+    sn[i] ~ dunif(0.25, 0.75)                 #sensitivity of surveillance process to identify case
+    u[i] ~ dnorm(0, tau_u)                    #unstructured (non-spatial) random effect
     
     ## models
     
@@ -266,10 +505,14 @@ line_data = list("y.o"=philly_data$Positive, "t"=philly_data$Population, "adi"=a
 
 #run JAGS with benchmarking
 time1 = Sys.time()
-model1_posterior = jags.parallel(data=line_data, parameters.to.save=c("r","y.t","sn","sp","err","eta0","eta1","phi","tau"), model.file=jags_model1, n.chains=5, n.thin=10, n.iter=50000, n.burnin=5000)
-model2_posterior = jags.parallel(data=line_data, parameters.to.save=c("r","y.t","sn","sp","err","eta0","eta1","phi","tau"), model.file=jags_model2, n.chains=5, n.thin=10, n.iter=50000, n.burnin=5000)
-model3_posterior = jags.parallel(data=line_data, parameters.to.save=c("r","y.t","sn","sp","err","eta0","eta1","phi","tau"), model.file=jags_model3, n.chains=5, n.thin=10, n.iter=50000, n.burnin=5000)
-model4_posterior = jags.parallel(data=line_data, parameters.to.save=c("r","y.t","sn","sp","err","eta0","eta1","phi","tau"), model.file=jags_model4, n.chains=5, n.thin=10, n.iter=50000, n.burnin=5000)
+model1_posterior = jags.parallel(data=line_data, parameters.to.save=c("r","y.t","sn","sp","err","eta0","eta1","phi","u","v"), model.file=jags_model1, n.chains=5, n.thin=10, n.iter=50000, n.burnin=5000)
+model2_posterior = jags.parallel(data=line_data, parameters.to.save=c("r","y.t","sn","sp","err","eta0","eta1","phi","u","v"), model.file=jags_model2, n.chains=5, n.thin=10, n.iter=50000, n.burnin=5000)
+model3_posterior = jags.parallel(data=line_data, parameters.to.save=c("r","y.t","sn","sp","err","eta0","eta1","phi","u","v"), model.file=jags_model3, n.chains=5, n.thin=10, n.iter=50000, n.burnin=5000)
+model4_posterior = jags.parallel(data=line_data, parameters.to.save=c("r","y.t","sn","sp","err","eta0","eta1","phi","u","v"), model.file=jags_model4, n.chains=5, n.thin=10, n.iter=50000, n.burnin=5000)
+model1_sn_posterior = jags.parallel(data=line_data, parameters.to.save=c("r","y.t","sn","sp","err","eta0","eta1","phi","u","v"), model.file=jags_model1_sn, n.chains=5, n.thin=10, n.iter=50000, n.burnin=5000)
+model2_sn_posterior = jags.parallel(data=line_data, parameters.to.save=c("r","y.t","sn","sp","err","eta0","eta1","phi","u","v"), model.file=jags_model2_sn, n.chains=5, n.thin=10, n.iter=50000, n.burnin=5000)
+model3_sn_posterior = jags.parallel(data=line_data, parameters.to.save=c("r","y.t","sn","sp","err","eta0","eta1","phi","u","v"), model.file=jags_model3_sn, n.chains=5, n.thin=10, n.iter=50000, n.burnin=5000)
+model4_sn_posterior = jags.parallel(data=line_data, parameters.to.save=c("r","y.t","sn","sp","err","eta0","eta1","phi","u","v"), model.file=jags_model4_sn, n.chains=5, n.thin=10, n.iter=50000, n.burnin=5000)
 time2 = Sys.time()
 time2-time1
 rm(time1, time2)
@@ -278,11 +521,12 @@ rm(time1, time2)
 save.image("bayes_posterior.RData")
 
 
-### EXPLORATORY VISUALIZATIONS and DIAGNOSTICS ###
+### POSTERIOR VISUALIZATIONS and DIAGNOSTICS ###
 
 #read saved data
 load("bayes_posterior.RData")
 
+#posterior for inference
 covid_posterior = model4_posterior
 
 #obtain Gelman-Rubin convergence diagnostic (Rhat: potential scale reduction factor)
@@ -290,10 +534,10 @@ options(max.print=9999)
 print(covid_posterior)
 
 #diagnostics
-MCMCtrace(model1_posterior, params=c("sn","sp","eta0","eta1","phi","tau","r","deviance"), wd="", filename="Appendix 2.pdf")
-MCMCtrace(model2_posterior, params=c("sn","sp","eta0","eta1","phi","tau","r","deviance"), wd="", filename="Appendix 3.pdf")
-MCMCtrace(model3_posterior, params=c("sn","sp","eta0","eta1","phi","tau","r","deviance"), wd="", filename="Appendix 4.pdf")
-MCMCtrace(model4_posterior, params=c("sn","sp","eta0","eta1","phi","tau","r","deviance"), wd="", filename="Appendix 5.pdf")
+MCMCtrace(model1_posterior, params=c("sn","sp","eta0","eta1","u","v","r","deviance"), wd="/", filename="Appendix 4.pdf")
+MCMCtrace(model2_posterior, params=c("sn","sp","eta0","eta1","u","v","r","deviance"), wd="/", filename="Appendix 5.pdf")
+MCMCtrace(model3_posterior, params=c("sn","sp","eta0","eta1","u","v","r","deviance"), wd="/", filename="Appendix 6.pdf")
+MCMCtrace(model4_posterior, params=c("sn","sp","eta0","eta1","u","v","r","deviance"), wd="/", filename="Appendix 7.pdf")
 
 #save model syntax file
 writeLines(capture.output(getAnywhere(jags_model)), file("bugs_model.txt"))
@@ -342,13 +586,13 @@ r_posterior = function(covid_posterior) {
   #extract each chain as a dataframe
   #nrow = (n.iter - n.burnin) / n.thin
   chain1 = as.data.frame(as.mcmc(covid_posterior)[[1]])
-  chain2 = as.data.frame(as.mcmc(covid_posterior)[[1]])
-  chain3 = as.data.frame(as.mcmc(covid_posterior)[[1]])
-  chain4 = as.data.frame(as.mcmc(covid_posterior)[[1]])
-  chain5 = as.data.frame(as.mcmc(covid_posterior)[[1]])
+  chain2 = as.data.frame(as.mcmc(covid_posterior)[[2]])
+  chain3 = as.data.frame(as.mcmc(covid_posterior)[[3]])
+  chain4 = as.data.frame(as.mcmc(covid_posterior)[[4]])
+  chain5 = as.data.frame(as.mcmc(covid_posterior)[[5]])
   
   #add zip code specific posteriors to dataframe
-  r_posterior = data.frame(matrix(NA,ncol=47,nrow=nrow(chain1)*5))
+  r_posterior = data.frame(matrix(NA,ncol=zip,nrow=nrow(chain1)*5))
   col_mapping = colnames(r_posterior)[order(names(r_posterior))]
   for (i in 1:ncol(r_posterior)) {
     
@@ -368,6 +612,11 @@ r_model2 = r_posterior(model2_posterior)
 r_model3 = r_posterior(model3_posterior)
 r_model4 = r_posterior(model4_posterior)
 
+r_model1_sn = r_posterior(model1_sn_posterior)
+r_model2_sn = r_posterior(model2_sn_posterior)
+r_model3_sn = r_posterior(model3_sn_posterior)
+r_model4_sn = r_posterior(model4_sn_posterior)
+
 
 ### POSTERIOR ESTIMATES for MANUSCRIPT ###
 
@@ -382,7 +631,7 @@ philly_data$ZCTA[which(sn_post$X50==min(sn_post$X50))]
 sn_post[sn_post$X50==max(sn_post$X50), ]
 philly_data$ZCTA[which(sn_post$X50==max(sn_post$X50))]
 
-MCMCplot(covid_posterior, horiz=F, excl=c("deviance","r","err","y.t","eta0","eta1","phi","tau","sp"), labels=philly_data$ZCTA, sz_labels=1, ylab="Sensitivity (95% CrI)", ylim=c(0.2,0.9))
+MCMCplot(covid_posterior, horiz=F, excl=c("deviance","r","err","y.t","eta0","eta1","phi","sp","u","v"), labels=philly_data$ZCTA, sz_labels=1, ylab="Sensitivity (95% CrI)", ylim=c(0.2,0.9))
 
 #SP
 #sp_post = data.frame(covid_posterior$BUGSoutput$summary[grep("sp",row.names(covid_posterior$BUGSoutput$summary)),], stringsAsFactors=F)
@@ -466,8 +715,10 @@ philly_data$ZCTA[which(prev_post$X50==max(prev_post$X50))]
 
 #measurement error
 err_post = data.frame(covid_posterior$BUGSoutput$summary[grep("err",row.names(covid_posterior$BUGSoutput$summary)),], stringsAsFactors=F)
-MCMCplot(covid_posterior, horiz=F, excl=c("deviance","r","sn","sp","y.t","eta0","eta1","phi","tau"), labels=philly_data$ZCTA, sz_labels=1, ylab="Missed cases (95% CrI)", ylim=c(-100,1500))
+MCMCplot(covid_posterior, horiz=F, excl=c("deviance","r","sn","sp","y.t","eta0","eta1","phi","u","v"), labels=philly_data$ZCTA, sz_labels=1, ylab="Missed cases (95% CrI)", ylim=c(-100,1500))
 err_post[err_post$X50==max(err_post$X50), ]
+philly_data$ZCTA[which(err_post$X50==max(err_post$X50))]
+prev_post[philly_data$ZCTA==19120, ]
 
 
 ### POSTERIOR PREVALENCE PLOT ###
@@ -520,8 +771,8 @@ boxplot_df = data.frame("r"=c(c(r_model1$X1, r_model2$X1, r_model3$X1, r_model4$
                               c(r_model1$X45, r_model2$X45, r_model3$X45, r_model4$X45),
                               c(r_model1$X46, r_model2$X46, r_model3$X46, r_model4$X46),
                               c(r_model1$X47, r_model2$X47, r_model3$X47, r_model4$X47)),
-                        "zcta"=rep(philly_data$ZCTA[1:47], each=nrow(r_model1)*4),
-                        "model"=rep(rep(c("Model 1","Model 2","Model 3", "Model 4"), each=nrow(r_model1)), 47),
+                        "zcta"=rep(philly_data$ZCTA[1:zip], each=nrow(r_model1)*4),
+                        "model"=rep(rep(c("Model 1","Model 2","Model 3", "Model 4"), each=nrow(r_model1)), zip),
                         stringsAsFactors=F)
 
 #x-axis zip codes
@@ -536,6 +787,160 @@ axis(side=1, labels=philly_data$ZCTA, at=seq(2.5,188, by=4), las=2, tick=F)
 rect(seq(0.5,188,by=8),rep(-1,24),seq(4.5,188.5,by=8),1,col = rgb(0.5,0.5,0.5,1/5), border=NA)
 points(x=seq(2.5,188,by=4),y=(philly_data$Positive/philly_data$Population), col="black", pch=8, cex=1.5)
 legend("topleft", legend=c("Model 1","Model 2", "Model 3", "Model 4", "Observed"), fill=c(c("#F0E442", "#56B4E9", "#009E73","#D55E00"), NA), border=c("black","black","black","black",NA), y.intersp=0.6, cex=0.8, pch=c(NA,NA,NA,NA,8))
+
+
+### PRIOR and POSTERIOR PLOTS ##
+
+par(mfrow=c(3,2))
+
+#phi
+plot(NULL, main="A) phi", xlab="Value", ylab="Density", yaxt='n', xlim=c(-0.1,1.1), ylim=c(0,1.5))
+
+#obtain posterior
+phi = c(as.data.frame(as.mcmc(covid_posterior)[[1]])$phi,
+        as.data.frame(as.mcmc(covid_posterior)[[2]])$phi,
+        as.data.frame(as.mcmc(covid_posterior)[[3]])$phi,
+        as.data.frame(as.mcmc(covid_posterior)[[1]])$phi,
+        as.data.frame(as.mcmc(covid_posterior)[[1]])$phi)
+
+#add lines
+lines(density(phi), lwd=2, col="gray")
+lines(density(runif(covid_posterior$BUGSoutput$n.sims, 0, 1)), lwd=2, col="black")
+#legend("topleft", legend=c("Prior","Posterior"), lty=1, lwd=2, col=c("black","gray"))
+rm(phi)
+
+#sp
+plot(NULL, main="B) specificity", xlab="Value", ylab="Density", yaxt='n', xlim=c(0.95,1), ylim=c(0,500))
+
+#obtain posterior
+sp = c(as.data.frame(as.mcmc(covid_posterior)[[1]])$sp,
+       as.data.frame(as.mcmc(covid_posterior)[[2]])$sp,
+       as.data.frame(as.mcmc(covid_posterior)[[3]])$sp,
+       as.data.frame(as.mcmc(covid_posterior)[[1]])$sp,
+       as.data.frame(as.mcmc(covid_posterior)[[1]])$sp)
+
+#add lines
+lines(density(sp), lwd=2, col="gray")
+lines(density(rbeta(covid_posterior$BUGSoutput$n.sims, 100, 3.02)), lwd=2, col="black")
+#legend("topleft", legend=c("Prior","Posterior"), lty=1, lwd=2, col=c("black","gray"))
+rm(sp)
+
+#sn
+plot(NULL, main="C) sensitivity", xlab="Value", ylab="Density", yaxt='n', xlim=c(0.2,0.9), ylim=c(0,5))
+
+#obtain posterior and add lines
+chain1 = as.data.frame(as.mcmc(covid_posterior)[[1]])
+chain2 = as.data.frame(as.mcmc(covid_posterior)[[2]])
+chain3 = as.data.frame(as.mcmc(covid_posterior)[[3]])
+chain4 = as.data.frame(as.mcmc(covid_posterior)[[4]])
+chain5 = as.data.frame(as.mcmc(covid_posterior)[[5]])
+
+#add zip code specific posteriors to dataframe
+sn = data.frame(matrix(NA,ncol=zip,nrow=covid_posterior$BUGSoutput$n.sims))
+col_mapping = colnames(sn)[order(names(sn))]
+for (i in 1:ncol(sn)) {
+  
+  #determine correct column (offset is based on first r column in mcmc output)
+  col_index = which(col_mapping==colnames(sn)[i]) + 98
+  
+  #add data
+  sn[,i] = c(chain1[,col_index], chain2[,col_index], chain3[,col_index], chain4[,col_index], chain5[,col_index])
+}
+rm(i,col_mapping,col_index,chain1,chain2,chain3,chain4,chain5)
+
+#add lines
+for (i in 1:zip) {
+  lines(density(sn[,i]), lwd=1, xlim=c(0.95, 1), yaxt='n', col="gray")
+}
+rm(i, sn)
+
+lines(density(rbeta(covid_posterior$BUGSoutput$n.sims, 14.022, 9.681)), lwd=2, col="black")
+#legend("topleft", legend=c("Prior","Posterior"), lty=1, lwd=2, col=c("black","gray"))
+
+#u
+plot(NULL, main="D) u", xlab="Value", ylab="Density", yaxt='n', xlim=c(-20,20), ylim=c(0,2))
+
+#obtain posterior and add lines
+chain1 = as.data.frame(as.mcmc(covid_posterior)[[1]])
+chain2 = as.data.frame(as.mcmc(covid_posterior)[[2]])
+chain3 = as.data.frame(as.mcmc(covid_posterior)[[3]])
+chain4 = as.data.frame(as.mcmc(covid_posterior)[[4]])
+chain5 = as.data.frame(as.mcmc(covid_posterior)[[5]])
+
+#add zip code specific posteriors to dataframe
+u = data.frame(matrix(NA,ncol=zip,nrow=covid_posterior$BUGSoutput$n.sims))
+col_mapping = colnames(u)[order(names(u))]
+for (i in 1:ncol(u)) {
+  
+  #determine correct column (offset is based on first r column in mcmc output)
+  col_index = which(col_mapping==colnames(u)[i]) + 146
+  
+  #add data
+  u[,i] = c(chain1[,col_index], chain2[,col_index], chain3[,col_index], chain4[,col_index], chain5[,col_index])
+}
+rm(i,col_mapping,col_index,chain1,chain2,chain3,chain4,chain5)
+
+#add lines
+for (i in 1:zip) {
+  lines(density(u[,i]), lwd=1, xlim=c(0.95, 1), yaxt='n', col="gray")
+}
+rm(i, u)
+
+lines(density(rnorm(covid_posterior$BUGSoutput$n.sims, 0, median(rgamma(covid_posterior$BUGSoutput$n.sims, 1, 0.1)))), lwd=2, col="black")
+#legend("topleft", legend=c("Prior","Posterior"), lty=1, lwd=2, col=c("black","gray"))
+
+#v
+plot(NULL, main="E) v", xlab="Value", ylab="Density", yaxt='n', xlim=c(-20,20), ylim=c(0,2))
+
+#obtain posterior and add lines
+chain1 = as.data.frame(as.mcmc(covid_posterior)[[1]])
+chain2 = as.data.frame(as.mcmc(covid_posterior)[[2]])
+chain3 = as.data.frame(as.mcmc(covid_posterior)[[3]])
+chain4 = as.data.frame(as.mcmc(covid_posterior)[[4]])
+chain5 = as.data.frame(as.mcmc(covid_posterior)[[5]])
+
+#add zip code specific posteriors to dataframe
+v = data.frame(matrix(NA,ncol=zip,nrow=covid_posterior$BUGSoutput$n.sims))
+col_mapping = colnames(v)[order(names(v))]
+for (i in 1:ncol(v)) {
+  
+  #determine correct column (offset is based on first r column in mcmc output)
+  col_index = which(col_mapping==colnames(v)[i]) + 193
+  
+  #add data
+  v[,i] = c(chain1[,col_index], chain2[,col_index], chain3[,col_index], chain4[,col_index], chain5[,col_index])
+}
+rm(i,col_mapping,col_index,chain1,chain2,chain3,chain4,chain5)
+
+#add lines
+for (i in 1:zip) {
+  lines(density(v[,i]), lwd=1, xlim=c(0.95, 1), yaxt='n', col="gray")
+}
+rm(i, v)
+
+lines(density(mvrnorm(covid_posterior$BUGSoutput$n.sims, mu=rep(0,zip), Sigma=median(rgamma(covid_posterior$BUGSoutput$n.sims, 1, 0.1)) * (d - median(runif(covid_posterior$BUGSoutput$n.sims, 0, 1))*w))), lwd=2, col="black")
+#legend("topleft", legend=c("Prior","Posterior"), lty=1, lwd=2, col=c("black","gray"))
+
+
+### SENSITIVITY ANALYSIS CORRELATION MATRIX ###
+
+par(mar=rep(2,4), mfrow=c(2,2))
+
+plot(colMedians(as.matrix(r_model1_sn)), colMedians(as.matrix(r_model1)), pch=16, xlim=c(0.01,0.06), ylim=c(0,0.06), xlab="", ylab="", main="A) Model 1")
+text(0.0125,0.05, expression(paste(rho)))
+text(0.016, 0.05, paste("=","",round(cor(colMedians(as.matrix(r_model1)), colMedians(as.matrix(r_model1_sn))), 2)))
+
+plot(colMedians(as.matrix(r_model2_sn)), colMedians(as.matrix(r_model2)), pch=16, xlim=c(0.01,0.06), ylim=c(0,0.06), xlab="", ylab="", main="B) Model 2")
+text(0.0125,0.05, expression(paste(rho)))
+text(0.018, 0.05, paste("=","",round(cor(colMedians(as.matrix(r_model2)), colMedians(as.matrix(r_model2_sn))), 2)))
+
+plot(colMedians(as.matrix(r_model3_sn)), colMedians(as.matrix(r_model3)), pch=16, xlim=c(0.01,0.06), ylim=c(0,0.06), xlab="", ylab="", main="C) Model 3")
+text(0.0125,0.05, expression(paste(rho)))
+text(0.018, 0.05, paste("=","",round(cor(colMedians(as.matrix(r_model3)), colMedians(as.matrix(r_model3_sn))), 2)))
+
+plot(colMedians(as.matrix(r_model4_sn)), colMedians(as.matrix(r_model4)), pch=16, xlim=c(0.01,0.06), ylim=c(0,0.06), xlab="", ylab="", main="D) Model 4")
+text(0.0125,0.05, expression(paste(rho)))
+text(0.018, 0.05, paste("=","",round(cor(colMedians(as.matrix(r_model4)), colMedians(as.matrix(r_model4_sn))), 2)))
 
 
 ### SPATIAL ANALYSIS of POSTERIOR ###
