@@ -1,6 +1,6 @@
 #################
 # COVID-19 spatial maps
-# Citation: Goldstein ND, Wheeler DC, Gustafson P, Burstyn I. A Bayesian Approach to Improving Spatial Estimates After Accounting for Misclassification Bias in Surveillance Data for COVID-19 in Philadelphia, PA. Manuscript in preparation.
+# Citation: Goldstein ND, Wheeler DC, Gustafson P, Burstyn I. A Bayesian Approach to Improving Spatial Estimates of Prevalence of COVID-19 After Accounting for Misclassification Bias in Surveillance Data in Philadelphia, PA. Manuscript in preparation.
 # 4/10/20 -- Neal Goldstein
 #################
 
